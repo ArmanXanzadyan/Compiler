@@ -1,15 +1,13 @@
 #pragma once
+
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
-#include <map>
-#include <memory>
-#include <cstdint>
-#include <iostream>
-#include <sstream>
 
-// ============================================================
-//  TOKEN TYPES
-// ============================================================
+// ---------------------------------------------------------------------------
+//  Lexer tokens
+// ---------------------------------------------------------------------------
 enum class TokenType {
     NUMBER, VARIABLE, STRING_LIT,
     PLUS, MINUS, STAR, SLASH, PERCENT,
@@ -25,16 +23,18 @@ enum class TokenType {
 };
 
 struct Token {
-    TokenType type;
+    TokenType   type = TokenType::END_OF_FILE;
     std::string value;
-    int line = 0;
+    int         line = 0;
 
-    Token(TokenType t, std::string v, int ln = 0) : type(t), value(v), line(ln) {}
+    Token() = default;
+    Token(TokenType t, std::string v, int ln = 0)
+        : type(t), value(std::move(v)), line(ln) {}
 };
 
-// ============================================================
-//  AST NODE KINDS
-// ============================================================
+// ---------------------------------------------------------------------------
+//  AST
+// ---------------------------------------------------------------------------
 enum class NodeKind {
     // Expressions
     NUM_LIT, VAR_REF, BINOP, UNOP, ASSIGN_EXPR, CALL,
@@ -49,19 +49,20 @@ enum class NodeKind {
 };
 
 struct ASTNode {
-    NodeKind kind;
-    std::string text;       // operator / identifier / literal text
-    double numVal = 0;
+    NodeKind    kind = NodeKind::PROGRAM;
+    std::string text;        // operator, identifier, literal text
+    double      numVal = 0;  // value when kind == NUM_LIT
 
     std::vector<std::unique_ptr<ASTNode>> children;
 
-    ASTNode(NodeKind k, std::string t = "") : kind(k), text(t) {}
-    ASTNode(double v) : kind(NodeKind::NUM_LIT), numVal(v) {}
+    explicit ASTNode(NodeKind k, std::string t = "")
+        : kind(k), text(std::move(t)) {}
+    explicit ASTNode(double v) : kind(NodeKind::NUM_LIT), numVal(v) {}
 };
 
-// ============================================================
-//  INSTRUCTION SET (virtual RISC-V-inspired ISA)
-// ============================================================
+// ---------------------------------------------------------------------------
+//  Virtual ISA (RISC-V-inspired teaching instruction set)
+// ---------------------------------------------------------------------------
 enum class OpCode : uint32_t {
     MOV_CONST = 0, LOAD_VAR, STORE_VAR,
     ADD, SUB, MUL, DIV, MOD,
@@ -78,7 +79,7 @@ enum class OpCode : uint32_t {
     HALT
 };
 
-// 4-byte instruction
+// A fixed 4-byte instruction word (5 + 9 + 9 + 9 = 32 bits).
 struct Instruction {
     uint32_t op : 5;
     uint32_t rd : 9;   // destination register
@@ -87,22 +88,13 @@ struct Instruction {
 };
 static_assert(sizeof(Instruction) == 4, "Instruction must be 4 bytes");
 
-extern const char* opCodeNames[];
-
-// ============================================================
-//  EXEC FILE
-// ============================================================
+// ---------------------------------------------------------------------------
+//  EXEC file layout (on-disk structures shared by ExecIO and tooling)
+// ---------------------------------------------------------------------------
 struct SectionHeader {
     uint32_t type;    // 0=Code, 1=Data, 2=SymbolTable
     uint32_t size;
     uint32_t offset;
-};
-
-struct ExecFileHeader {
-    char     signature[4] = { 'E','X','E','C' };  // 4 bytes
-    uint32_t headerSize = sizeof(ExecFileHeader);
-    uint32_t sectionCount = 3;
-    SectionHeader sections[3];  // Code, Data, SymbolTable
 };
 
 struct SymbolEntry {
@@ -115,17 +107,3 @@ struct RelocEntry {
     uint32_t instrOffset;
     uint32_t symbolIndex;
 };
-
-struct JumpTableEntry {
-    int32_t  minVal;
-    uint32_t tableId;
-    uint32_t targetCount;
-};
-
-// RISC-V RV32I-style opcode identifiers (virtual teaching ISA)
-namespace RiscV {
-    constexpr uint32_t OP_LOAD  = 0x03;
-    constexpr uint32_t OP_OP    = 0x33;
-    constexpr uint32_t OP_BRANCH = 0x63;
-    constexpr uint32_t OP_JAL   = 0x6F;
-}

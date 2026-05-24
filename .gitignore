@@ -1,0 +1,10 @@
+build/
+*.o
+*.obj
+*.exec
+# Visual Studio
+.vs/
+x64/
+Debug/
+Release/
+*.user

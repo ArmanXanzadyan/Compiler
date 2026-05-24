@@ -1,9 +1,10 @@
 #pragma once
 
 #include "Common.h"
-#include "CodeGenerator.h"
-#include <vector>
+#include "Program.h"
+
 #include <cstdint>
+#include <vector>
 
 enum class Segment : uint32_t {
     Code = 0, Data = 1, SymbolTable = 2, RelocTable = 3, JumpTable = 4
@@ -43,11 +44,11 @@ public:
     Instruction decoded{};
     bool decodedValid = false;
 
-    std::vector<uint8_t> memory;
-    std::vector<Instruction> code;
-    std::vector<double> constPool;
-    std::vector<CodeGen::Program::JumpTable> jumpTables;
-    std::vector<uint64_t> callStack;
+    std::vector<uint8_t>             memory;
+    std::vector<Instruction>         code;
+    std::vector<double>              constPool;
+    std::vector<Program::JumpTable>  jumpTables;
+    std::vector<uint64_t>            callStack;
 
     VM();
 
@@ -64,7 +65,7 @@ public:
 
     void loadProgram(const std::vector<Instruction>& c,
                      const std::vector<double>& pool,
-                     const std::vector<CodeGen::Program::JumpTable>& jt = {});
+                     const std::vector<Program::JumpTable>& jt = {});
 
     void pushStack(uint64_t v);
     uint64_t popStack();

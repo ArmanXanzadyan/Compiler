@@ -1,6 +1,7 @@
 #include "ExecIO.h"
-#include <fstream>
+
 #include <cstring>
+#include <fstream>
 #include <map>
 #include <vector>
 
@@ -20,7 +21,7 @@ static constexpr uint32_t SEC_SYMTAB = 2;
 static constexpr uint32_t SEC_RELOC = 3;
 static constexpr uint32_t SEC_JUMP = 4;
 
-bool ExecIO::write(const std::string& path, const CodeGen::Program& prog) {
+bool ExecIO::write(const std::string& path, const Program& prog) {
     std::vector<uint8_t> blob;
     auto append = [&](const void* p, size_t n) {
         const uint8_t* b = (const uint8_t*)p;
@@ -103,9 +104,9 @@ bool ExecIO::load(const std::string& path, VM& vm) {
     ExecFileOnDisk hdr;
     memcpy(&hdr, blob.data(), sizeof(hdr));
 
-    std::vector<Instruction> code;
-    std::vector<double> pool;
-    std::vector<CodeGen::Program::JumpTable> jumpTables;
+    std::vector<Instruction>        code;
+    std::vector<double>             pool;
+    std::vector<Program::JumpTable> jumpTables;
 
     auto readSec = [&](uint32_t type, auto fn) {
         for (uint32_t i = 0; i < hdr.sectionCount && i < 5; i++) {
@@ -128,7 +129,7 @@ bool ExecIO::load(const std::string& path, VM& vm) {
     readSec(SEC_JUMP, [&](size_t off, size_t size) {
         size_t pos = off;
         while (pos + 8 <= off + size) {
-            CodeGen::Program::JumpTable jt;
+            Program::JumpTable jt;
             memcpy(&jt.minVal, blob.data() + pos, 4); pos += 4;
             uint32_t cnt = 0;
             memcpy(&cnt, blob.data() + pos, 4); pos += 4;

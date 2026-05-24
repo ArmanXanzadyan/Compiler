@@ -1,11 +1,12 @@
 #pragma once
 
-#include "CodeGenerator.h"
+#include "Program.h"
+
 #include <string>
 
+// Render a Program as text and parse simple textual assembly back into a Program.
 class Assembler {
 public:
-    void assemble();
-    std::string disassemble(const CodeGen::Program& prog);
-    CodeGen::Program assembleSource(const std::string& asmText);
+    std::string disassemble(const Program& prog) const;
+    Program     assembleSource(const std::string& asmText) const;
 };

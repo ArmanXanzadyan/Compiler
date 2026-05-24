@@ -39,7 +39,7 @@ void VM::mapCodeToMemory() {
 
 void VM::loadProgram(const std::vector<Instruction>& c,
                      const std::vector<double>& pool,
-                     const std::vector<CodeGen::Program::JumpTable>& jt) {
+                     const std::vector<Program::JumpTable>& jt) {
     code = c;
     constPool = pool;
     jumpTables = jt;
