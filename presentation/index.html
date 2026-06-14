@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compiler &amp; Virtual Machine - Project Presentation</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-2: #273449;
+    --ink: #e8edf5;
+    --muted: #9fb0c7;
+    --accent: #38bdf8;
+    --accent-2: #34d399;
+    --line: #34465f;
+    --code-bg: #0b1322;
+    --warn: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+
+  .deck { height: 100vh; width: 100vw; position: relative; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5vh 7vw 9vh;
+    animation: fade .35s ease;
+  }
+  .slide.active { display: flex; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  h1 { font-size: clamp(30px, 5vw, 58px); line-height: 1.1; margin-bottom: 18px; }
+  h2 { font-size: clamp(24px, 3.4vw, 40px); margin-bottom: 22px; }
+  p  { font-size: clamp(15px, 1.5vw, 20px); color: var(--ink); max-width: 60ch; }
+  .sub { color: var(--muted); font-size: clamp(15px, 1.6vw, 21px); max-width: 65ch; }
+
+  ul { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
+  li {
+    font-size: clamp(15px, 1.5vw, 20px);
+    padding-left: 26px;
+    position: relative;
+    max-width: 70ch;
+  }
+  li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: .55em;
+    width: 9px; height: 9px;
+    background: var(--accent-2);
+    border-radius: 2px;
+  }
+  li b { color: var(--accent); }
+
+  code, pre, .mono { font-family: "Cascadia Code", "Consolas", ui-monospace, monospace; }
+  code.inline {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 1px 7px;
+    font-size: .9em;
+    color: var(--accent-2);
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-top: 18px;
+    font-size: clamp(12px, 1.25vw, 16px);
+    line-height: 1.6;
+    overflow: auto;
+    max-width: 90ch;
+    color: #d7e2f1;
+  }
+  pre .k  { color: #c084fc; }
+  pre .c  { color: #6b7f99; font-style: italic; }
+  pre .s  { color: #fca5a5; }
+  pre .n  { color: var(--accent-2); }
+
+  /* Pipeline diagram */
+  .pipeline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: stretch;
+    margin-top: 26px;
+    max-width: 95ch;
+  }
+  .stage {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    padding: 12px 14px;
+    min-width: 150px;
+    flex: 1 1 150px;
+  }
+  .stage .num { color: var(--accent); font-weight: 700; font-size: 12px; letter-spacing: 1px; }
+  .stage .nm  { font-weight: 700; font-size: clamp(14px, 1.4vw, 18px); margin: 4px 0 3px; }
+  .stage .ds  { color: var(--muted); font-size: 13px; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 18px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+  .card h3 { color: var(--accent); font-size: clamp(16px, 1.7vw, 22px); margin-bottom: 10px; }
+  .card p, .card li { font-size: clamp(13px, 1.3vw, 17px); }
+  .card ul { margin-top: 10px; gap: 8px; }
+
+  .tag {
+    display: inline-block;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 13px;
+    margin: 4px 6px 0 0;
+  }
+  .note {
+    margin-top: 18px;
+    border-left: 4px solid var(--warn);
+    background: rgba(251,191,36,.08);
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: clamp(13px, 1.3vw, 17px);
+    max-width: 80ch;
+  }
+  .note b { color: var(--warn); }
+
+  /* footer / chrome */
+  .chrome {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 6vh;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    background: rgba(15,23,42,.85);
+    border-top: 1px solid var(--line);
+    backdrop-filter: blur(4px);
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .chrome .title { color: var(--ink); font-weight: 600; }
+  .nav { display: flex; align-items: center; gap: 10px; }
+  .nav button {
+    background: var(--panel-2);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    width: 34px; height: 30px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .nav button:hover { border-color: var(--accent); color: var(--accent); }
+  .progress {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: var(--accent);
+    transition: width .25s ease;
+    z-index: 10;
+  }
+  .pagenum { min-width: 54px; text-align: center; }
+
+  .pillrow { margin-top: 22px; }
+  .big-num { font-size: clamp(40px, 6vw, 80px); color: var(--accent); font-weight: 800; }
+  .flow { color: var(--muted); margin: 0 6px; }
+
+  /* ---- Print / PDF: one slide per landscape page ---- */
+  @media print {
+    @page { size: 1280px 720px; margin: 0; }
+    html, body { overflow: visible; height: auto; background: var(--bg); }
+    .deck { height: auto; width: auto; position: static; }
+    .chrome, .progress, .nav { display: none !important; }
+    .slide {
+      position: relative;
+      inset: auto;
+      display: flex !important;
+      width: 1280px;
+      height: 720px;
+      padding: 56px 88px 64px;
+      animation: none;
+      break-after: page;
+      page-break-after: always;
+      overflow: hidden;
+    }
+    .slide:last-child { break-after: auto; page-break-after: auto; }
+    pre, .card, .stage { break-inside: avoid; }
+    /* clamp() largest values for stable print sizing */
+    h1 { font-size: 56px; }
+    h2 { font-size: 38px; }
+    p, .sub, li { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="deck" id="deck">
+
+  <!-- 1. TITLE -->
+  <section class="slide active">
+    <div class="eyebrow">Course Project</div>
+    <h1>Building a Compiler<br>and a Virtual Machine</h1>
+    <p class="sub">A small C-like language taken through every classical phase
+      in C++17: from source text, to tokens, to an AST, to intermediate code,
+      to machine code, and finally executed on our own virtual machine.</p>
+    <div class="pillrow">
+      <span class="tag">C++17</span>
+      <span class="tag">Lexer + Parser</span>
+      <span class="tag">IR &amp; Code Generation</span>
+      <span class="tag">Virtual Machine</span>
+      <span class="tag">Release + Debug builds</span>
+    </div>
+  </section>
+
+  <!-- 2. WHAT WE BUILT -->
+  <section class="slide">
+    <div class="eyebrow">Overview</div>
+    <h2>What the project is</h2>
+    <p class="sub">It is a complete toolchain for a tiny C subset. You write a
+      program, the compiler translates it down to instructions, and our virtual
+      machine runs those instructions and gives back a result.</p>
+    <ul>
+      <li><b>Front end</b> &mdash; reads the source and understands its structure (Lexer, Parser).</li>
+      <li><b>Middle end</b> &mdash; turns the structure into simple intermediate code (IRGen, LogicalCode).</li>
+      <li><b>Back end</b> &mdash; produces binary instructions and an executable file (CodeGenIR, Optimizer, Assembler, ExecIO).</li>
+      <li><b>Runtime</b> &mdash; loads and executes the program (Loader, Virtual Machine, Debugger).</li>
+    </ul>
+  </section>
+
+  <!-- 3. PIPELINE -->
+  <section class="slide">
+    <div class="eyebrow">Architecture</div>
+    <h2>The compilation pipeline</h2>
+    <p class="sub">Each phase has one job and hands its result to the next. This
+      is the same staged design used by real compilers.</p>
+    <div class="pipeline">
+      <div class="stage"><div class="num">1</div><div class="nm">Lexer</div><div class="ds">source text &rarr; tokens</div></div>
+      <div class="stage"><div class="num">2</div><div class="nm">Parser</div><div class="ds">tokens &rarr; AST</div></div>
+      <div class="stage"><div class="num">3</div><div class="nm">IRGen</div><div class="ds">AST &rarr; three-address IR</div></div>
+      <div class="stage"><div class="num">4</div><div class="nm">LogicalCode</div><div class="ds">lower &amp;&amp; || ! to branches</div></div>
+      <div class="stage"><div class="num">5</div><div class="nm">CodeGenIR</div><div class="ds">IR &rarr; binary instructions</div></div>
+      <div class="stage"><div class="num">6</div><div class="nm">Optimizer</div><div class="ds">peephole cleanup</div></div>
+      <div class="stage"><div class="num">7</div><div class="nm">Assembler</div><div class="ds">readable disassembly</div></div>
+      <div class="stage"><div class="num">8</div><div class="nm">ExecIO</div><div class="ds">write .exec file</div></div>
+      <div class="stage"><div class="num">9</div><div class="nm">Loader + VM</div><div class="ds">execute the program</div></div>
+    </div>
+  </section>
+
+  <!-- 4. LEXER -->
+  <section class="slide">
+    <div class="eyebrow">Phase 1</div>
+    <h2>Lexer &mdash; text into tokens</h2>
+    <p class="sub">The lexer scans the source one character at a time and groups
+      characters into meaningful tokens. It also skips whitespace and comments
+      and tracks line numbers for error messages.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Recognizes</h3>
+        <ul>
+          <li>Numbers, strings, identifiers</li>
+          <li>Keywords: <code class="inline">if while for return ...</code></li>
+          <li>Operators incl. <code class="inline">== != &lt;= &amp;&amp; ||</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Input &rarr; Output</h3>
+        <pre><span class="k">int</span> a = 5;
+<span class="c">// becomes the token stream:</span>
+INT_KW  VARIABLE(a)  ASSIGN
+NUMBER(5)  SEMICOLON</pre>
+      </div>
+    </div>
+    <p style="margin-top:16px"><code class="inline">include/Lexer.h</code> &middot; <code class="inline">include/Common.h</code></p>
+  </section>
+
+  <!-- 5. PARSER -->
+  <section class="slide">
+    <div class="eyebrow">Phase 2</div>
+    <h2>Parser &mdash; tokens into an AST</h2>
+    <p class="sub">A recursive-descent parser checks that the tokens form valid
+      grammar and builds an Abstract Syntax Tree. Operator precedence is handled
+      by a chain of functions, one per precedence level.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Handles</h3>
+        <ul>
+          <li>Declarations: functions, variables</li>
+          <li>Statements: <code class="inline">if/while/for/switch</code></li>
+          <li>Expressions by precedence</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>AST for <code class="inline">a + b</code></h3>
+        <pre>   BINOP "+"
+   /      \
+VAR_REF   VAR_REF
+  (a)       (b)</pre>
+      </div>
+    </div>
+    <p style="margin-top:16px"><code class="inline">include/Parser.h</code></p>
+  </section>
+
+  <!-- 6. IR + LOGICAL -->
+  <section class="slide">
+    <div class="eyebrow">Phases 3 &amp; 4</div>
+    <h2>Intermediate code</h2>
+    <p class="sub">The AST is flattened into simple three-address instructions
+      that are easy to translate. A separate pass rewrites the logical operators
+      into compares and branches.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>IRGen: AST &rarr; IR</h3>
+        <pre><span class="c">// c = a + b</span>
+t0 = a + b
+c  = t0</pre>
+      </div>
+      <div class="card">
+        <h3>LogicalCode</h3>
+        <p>Turns <code class="inline">&amp;&amp;</code>, <code class="inline">||</code>,
+          <code class="inline">!</code> into branch + compare IR, so the back end
+          only deals with simple jumps.</p>
+      </div>
+    </div>
+    <p style="margin-top:16px"><code class="inline">src/IRGen.cpp</code> &middot; <code class="inline">src/LogicalCode.cpp</code> &middot; <code class="inline">include/ir.h</code></p>
+  </section>
+
+  <!-- 7. CODEGEN / BACKEND -->
+  <section class="slide">
+    <div class="eyebrow">Phases 5 - 8</div>
+    <h2>Back end &mdash; producing machine code</h2>
+    <p class="sub">The IR is lowered into the virtual machine's binary instruction
+      set, cleaned up, disassembled for inspection, and written to an executable
+      file.</p>
+    <ul>
+      <li><b>CodeGenIR</b> assigns registers and emits fixed 4-byte instructions, a constant pool, symbols, relocations, and jump tables.</li>
+      <li><b>Optimizer</b> runs a peephole pass (removes dead consecutive writes).</li>
+      <li><b>Assembler</b> prints a readable listing of the instructions.</li>
+      <li><b>ExecIO</b> writes a self-describing <code class="inline">.exec</code> file with a header and sections (code, data, symbols, relocs, jump table).</li>
+    </ul>
+  </section>
+
+  <!-- 8. VM -->
+  <section class="slide">
+    <div class="eyebrow">Runtime</div>
+    <h2>The Virtual Machine</h2>
+    <p class="sub">A register-based virtual machine that runs our instructions
+      using the classic fetch &rarr; decode &rarr; execute cycle.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Architecture</h3>
+        <ul>
+          <li>32 registers, <code class="inline">pc</code>, <code class="inline">sp</code>, <code class="inline">bp</code>, flags</li>
+          <li>1 MB memory: Code / Data / Heap / Stack</li>
+          <li>16 / 32 / 64-bit word sizes</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Instruction set</h3>
+        <ul>
+          <li>Arithmetic, compare, branch, jump</li>
+          <li>Call / return with stack frames</li>
+          <li>Push/pop, load/store, heap alloc, jump tables</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:16px"><code class="inline">include/vm.h</code> &middot; <code class="inline">src/vm.cpp</code></p>
+  </section>
+
+  <!-- 9. BUILD: RELEASE + DEBUG -->
+  <section class="slide">
+    <div class="eyebrow">Engineering</div>
+    <h2>Two standard builds</h2>
+    <p class="sub">The project builds in two configurations through both a
+      Makefile and CMake, the way real C++ projects are organized.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Release</h3>
+        <pre><span class="k">make</span>
+<span class="c"># -O2 -DNDEBUG</span>
+./build/release/compiler</pre>
+        <p style="margin-top:10px">Optimized, for normal runs.</p>
+      </div>
+      <div class="card">
+        <h3>Debug</h3>
+        <pre><span class="k">make</span> debug
+<span class="c"># -O0 -g3 -DDEBUG_BUILD</span>
+<span class="c"># ASan + UBSan, gdb symbols</span>
+./build/debug/compiler</pre>
+        <p style="margin-top:10px">Prints a per-instruction VM trace.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. DEBUG TRACE DEMO -->
+  <section class="slide">
+    <div class="eyebrow">Debug build in action</div>
+    <h2>Watching the VM execute</h2>
+    <p class="sub">In the debug build, every instruction the VM fetches is traced
+      to the screen, so the fetch-decode-execute loop is visible step by step.</p>
+    <pre>[trace] pc=0    PUSH_BP     rd=0   rs1=0   rs2=0
+[trace] pc=1    SET_BP_SP   rd=0   rs1=0   rs2=0
+[trace] pc=2    MOV_CONST   rd=1   rs1=0   rs2=0
+[trace] pc=3    ADD         rd=2   rs1=1   rs2=0
+...
+[trace] pc=10   ADD         rd=8   rs1=2   rs2=4
+[trace] pc=12   ADD         rd=0   rs1=6   rs2=0
+Result R0 = <span class="n">15</span> (expected 15)</pre>
+  </section>
+
+  <!-- 11. WORKED EXAMPLE -->
+  <section class="slide">
+    <div class="eyebrow">End to end</div>
+    <h2>A full example</h2>
+    <p class="sub">This demo program travels through every phase and the VM
+      returns <code class="inline">15</code>.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Source</h3>
+        <pre><span class="k">int</span> main() {
+  <span class="k">int</span> a = 5;
+  <span class="k">int</span> b = 10;
+  <span class="k">int</span> c = 0;
+  <span class="k">if</span> (a &lt; b) {
+    c = a + b;
+  }
+  <span class="k">return</span> c;
+}</pre>
+      </div>
+      <div class="card">
+        <h3>Journey</h3>
+        <ul>
+          <li>Lexer &rarr; tokens</li>
+          <li>Parser &rarr; AST</li>
+          <li>IRGen + LogicalCode &rarr; IR</li>
+          <li>CodeGenIR &rarr; instructions</li>
+          <li>VM executes &rarr; <b>R0 = 15</b></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12. SUMMARY -->
+  <section class="slide">
+    <div class="eyebrow">Summary</div>
+    <h2>What it demonstrates</h2>
+    <ul>
+      <li>A complete <b>front end</b>: lexer and recursive-descent parser.</li>
+      <li>A <b>middle end</b> with intermediate code and a logical-lowering pass.</li>
+      <li>A <b>back end</b> that emits binary code and a real executable file format.</li>
+      <li>A working <b>register-based virtual machine</b> with fetch-decode-execute.</li>
+      <li>Standard engineering: <b>release and debug builds</b>, warnings clean, sanitizers pass.</li>
+    </ul>
+    <div class="note"><b>Result:</b> the demo program compiles and runs correctly,
+      returning 15 across all run modes (default, <code class="inline">--exec</code>, <code class="inline">--debug</code>).</div>
+  </section>
+
+  <!-- 13. CLOSE -->
+  <section class="slide">
+    <div class="eyebrow">Thank you</div>
+    <h1>Questions?</h1>
+    <p class="sub">Source layout: <code class="inline">include/</code> headers,
+      <code class="inline">src/</code> translation units,
+      <code class="inline">CMakeLists.txt</code> and <code class="inline">Makefile</code> for building.</p>
+    <div class="pillrow">
+      <span class="tag">Lexer</span><span class="tag">Parser</span>
+      <span class="tag">IRGen</span><span class="tag">LogicalCode</span>
+      <span class="tag">CodeGenIR</span><span class="tag">Optimizer</span>
+      <span class="tag">Assembler</span><span class="tag">ExecIO</span>
+      <span class="tag">Loader</span><span class="tag">Virtual Machine</span>
+    </div>
+  </section>
+
+</div>
+
+<div class="chrome">
+  <div class="title">Compiler &amp; Virtual Machine &mdash; Project Presentation</div>
+  <div class="nav">
+    <button id="prev" aria-label="Previous">&#8249;</button>
+    <div class="pagenum"><span id="cur">1</span> / <span id="total">1</span></div>
+    <button id="next" aria-label="Next">&#8250;</button>
+  </div>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let i = 0;
+  const curEl = document.getElementById('cur');
+  const totalEl = document.getElementById('total');
+  const progress = document.getElementById('progress');
+  totalEl.textContent = slides.length;
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    curEl.textContent = i + 1;
+    progress.style.width = ((i + 1) / slides.length * 100) + '%';
+  }
+  function next() { show(i + 1); }
+  function prev() { show(i - 1); }
+
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { next(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { prev(); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+  });
+  // Click right/left half of the screen to advance (ignore the footer controls).
+  document.getElementById('deck').addEventListener('click', (e) => {
+    if (e.clientY > window.innerHeight * 0.92) return;
+    if (e.clientX > window.innerWidth / 2) next(); else prev();
+  });
+  show(0);
+</script>
+</body>
+</html>

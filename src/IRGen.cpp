@@ -137,6 +137,13 @@ std::string IRGen::emitExpr(const ASTNode* n) {
         auto it = globals_.find(n->text);
         return it != globals_.end() ? it->second : n->text;
     }
+    case NodeKind::ASSIGN_EXPR: {
+        // lhs = rhs : evaluate rhs, then copy into the lhs storage slot.
+        std::string rhs = emitExpr(n->children[1].get());
+        std::string dst = emitExpr(n->children[0].get()); // resolves the var name
+        emit({ IROp::MOV_REG, dst, rhs, "" });
+        return dst;
+    }
     case NodeKind::BINOP: {
         if (n->text == "&&") {
             std::string t = fresh();

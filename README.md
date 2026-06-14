@@ -18,20 +18,40 @@ layer on its own.
 
 ## Build
 
-With CMake:
+The project builds in two standard configurations: an optimized **release**
+build and a fully instrumented **debug** build.
+
+With CMake (configuration chosen by `CMAKE_BUILD_TYPE`):
 
 ```bash
-cmake -S . -B build
+# Release (optimized, NDEBUG)
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ./build/compiler
+
+# Debug (-O0 -g3, DEBUG_BUILD diagnostics)
+cmake -S . -B build-debug -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-debug -j
+./build-debug/compiler
+
+# Optional Address/UB sanitizers for the Debug build
+cmake -S . -B build-debug -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZERS=ON
 ```
 
-Or the plain Makefile:
+Or the plain Makefile (separate output trees under `build/`):
 
 ```bash
-make
-./build/compiler
+make            # release -> build/release/compiler
+make debug      # debug   -> build/debug/compiler  (sanitizers on by default)
+make debug SANITIZE=0   # debug without sanitizers
+make run        # build + run release
+make run-debug  # build + run debug
+make clean
 ```
+
+The debug build defines `DEBUG_BUILD`, which turns on a per-instruction trace
+in the VM (printed to `stderr`) so you can watch the whole execution without
+stepping through it by hand. It also keeps full symbols for use under `gdb`.
 
 ## Run
 

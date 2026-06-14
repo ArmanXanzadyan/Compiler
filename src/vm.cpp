@@ -2,6 +2,10 @@
 #include <stdexcept>
 #include <cstring>
 
+#ifdef DEBUG_BUILD
+#include <cstdio>
+#endif
+
 VM::VM() {
     memory.resize(MEMORY_SIZE, 0);
     sp = STACK_TOP;
@@ -118,6 +122,19 @@ void VM::runOne() {
     if (!running || pc >= code.size()) return;
     if (pc == breakPc) stepMode = true;
     Instruction instr = fetch();
+#ifdef DEBUG_BUILD
+    // Debug builds trace every instruction before it executes so the full
+    // control flow is visible without an interactive session.
+    {
+        const char* name =
+            instr.op < opCodeNameCount ? opCodeNames[instr.op] : "?";
+        std::fprintf(stderr,
+                     "[trace] pc=%-4llu %-11s rd=%-3u rs1=%-3u rs2=%-3u\n",
+                     (unsigned long long)pc, name,
+                     (unsigned)instr.rd, (unsigned)instr.rs1,
+                     (unsigned)instr.rs2);
+    }
+#endif
     pc++;
     decode(instr);
     execute();
