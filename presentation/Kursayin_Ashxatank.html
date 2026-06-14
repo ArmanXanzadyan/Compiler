@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Կուրսային աշխատանք — Կոմպիլյատոր և Վիրտուալ մեքենա</title>
+<style>
+  :root{
+    --ink:#16202e; --muted:#4b5b6e; --accent:#1f5fae; --line:#cdd7e2;
+    --code-bg:#f3f5f8; --soft:#f7f9fb;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:"DejaVu Sans","Noto Sans Armenian","Segoe UI",Arial,sans-serif;
+    color:var(--ink); line-height:1.6; font-size:15px;
+    background:#fff;
+  }
+  .page{
+    width:210mm; margin:0 auto; padding:14mm 18mm;
+    background:#fff;
+  }
+  .page.break{ page-break-after:always; }
+
+  /* Title page */
+  .title-page{
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+    min-height:257mm; padding:24mm 22mm 0;
+  }
+  .title-page .ministry{ font-size:13px; color:var(--muted); line-height:1.7; margin-bottom:6px; }
+  .title-page .univ{ font-weight:700; font-size:15px; margin:2px 0; }
+  .title-page .inst{ font-size:14px; color:var(--muted); margin-bottom:60px; }
+  .title-page .doctype{
+    font-size:30px; font-weight:800; letter-spacing:2px; color:var(--accent);
+    margin:30px 0 50px; border-top:2px solid var(--line); border-bottom:2px solid var(--line);
+    padding:18px 0; width:100%;
+  }
+  .title-page .meta{ text-align:left; width:100%; max-width:130mm; margin:0 auto; font-size:15px; }
+  .title-page .meta div{ margin:7px 0; }
+  .title-page .meta b{ display:inline-block; min-width:120px; color:var(--muted); font-weight:600; }
+  .title-page .city{ margin-top:auto; font-size:15px; padding-top:60px; }
+
+  h1{ font-size:21px; color:var(--accent); margin:0 0 10px; }
+  h2{ font-size:18px; color:var(--accent); margin:16px 0 7px; border-bottom:2px solid var(--line); padding-bottom:4px; }
+  h3{ font-size:15px; color:var(--ink); margin:12px 0 5px; }
+  p{ margin:6px 0; }
+  ul,ol{ margin:6px 0 6px 6px; padding-left:22px; }
+  li{ margin:3px 0; }
+  code{ background:var(--code-bg); border:1px solid var(--line); border-radius:4px; padding:1px 5px; font-family:"DejaVu Sans Mono",Consolas,monospace; font-size:.9em; }
+  pre{
+    background:var(--code-bg); border:1px solid var(--line); border-radius:8px;
+    padding:9px 12px; margin:7px 0; overflow:auto; font-family:"DejaVu Sans Mono",Consolas,monospace;
+    font-size:12.5px; line-height:1.45; white-space:pre-wrap;
+  }
+  .toc{ background:var(--soft); border:1px solid var(--line); border-radius:8px; padding:14px 22px; }
+  .toc ol{ margin:0; }
+  .lead{ font-size:15px; color:var(--muted); }
+  table{ border-collapse:collapse; width:100%; margin:7px 0; font-size:13.5px; }
+  th,td{ border:1px solid var(--line); padding:5px 9px; text-align:left; vertical-align:top; }
+  th{ background:var(--soft); }
+  .flow{ background:var(--soft); border:1px solid var(--line); border-radius:8px; padding:12px 16px; font-family:"DejaVu Sans Mono",Consolas,monospace; font-size:13px; }
+  @media print{
+    @page{ size:A4; margin:0; }
+    .page{ margin:0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== TITLE PAGE ===== -->
+<section class="page title-page break">
+  <div class="ministry">
+    ՀՀ ԿՐԹՈՒԹՅԱՆ, ԳԻՏՈՒԹՅԱՆ, ՄՇԱԿՈՒՅԹԻ ԵՎ ՍՊՈՐՏԻ ՆԱԽԱՐԱՐՈՒԹՅՈՒՆ
+  </div>
+  <div class="univ">ՀԱՅԱՍՏԱՆԻ ԱԶԳԱՅԻՆ ՊՈԼԻՏԵԽՆԻԿԱԿԱՆ ՀԱՄԱԼՍԱՐԱՆ</div>
+  <div class="inst">ՏՀՏԷ ԻՆՍՏԻՏՈՒՏ</div>
+
+  <div class="doctype">ԿՈՒՐՍԱՅԻՆ ԱՇԽԱՏԱՆՔ</div>
+
+  <div class="meta">
+    <div><b>Առարկա՝</b> Օբյեկտ Կողմնորոշված Ծրագրավորում</div>
+    <div><b>Թեմա՝</b> Ծրագրավորման լեզվի կոմպիլյատորի և վիրտուալ մեքենայի մշակումը</div>
+    <div><b>Դասախոս՝</b> Խաչատրյան Տ.</div>
+    <div><b>Ուսանող՝</b> Արման Խանզադյան</div>
+  </div>
+
+  <div class="city">Երևան 2026</div>
+</section>
+
+<!-- ===== TABLE OF CONTENTS ===== -->
+<section class="page break">
+  <h1>ԲՈՎԱՆԴԱԿՈՒԹՅՈՒՆ</h1>
+  <div class="toc">
+    <ol>
+      <li>Ներածություն</li>
+      <li>Լեզվի ճարտարապետություն
+        <ul>
+          <li>Lexer (լեքսիկական վերլուծիչ)</li>
+          <li>Parser (շարահյուսական վերլուծիչ)</li>
+          <li>AST (աբստրակտ շարահյուսական ծառ)</li>
+          <li>Symbol Table (սիմվոլների աղյուսակ / scope-եր)</li>
+        </ul>
+      </li>
+      <li>Կոմպիլյատոր և միջանկյալ կոդ (IR / TAC)</li>
+      <li>Վիրտուալ մեքենա (VM)</li>
+      <li>Debugger (վրիպազերծիչ)</li>
+      <li>Build համակարգ (Release և Debug)</li>
+      <li>Եզրակացություն</li>
+      <li>Գրականություն</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ===== INTRO ===== -->
+<section class="page break">
+  <h1>ՆԵՐԱԾՈՒԹՅՈՒՆ</h1>
+  <p>Ծրագրավորման լեզուների մշակումը և կոմպիլյատորների կառուցումը հանդիսանում են
+  ժամանակակից համակարգչային գիտությունների կարևորագույն ոլորտներից մեկը։
+  Կոմպիլյատորը ծրագիր է, որը մի լեզվով գրված ելակոդը (source code) թարգմանում է
+  ավելի ցածր մակարդակի հրամանների, որոնք կարող է կատարել մեքենան։</p>
+
+  <p>Սույն աշխատանքում C++17 լեզվով իրականացվել է փոքր C-նման լեզվի համար նախատեսված
+  ամբողջական գործիքաշար՝</p>
+  <ul>
+    <li><b>Compiler</b> (կոմպիլյատոր)</li>
+    <li><b>IR / TAC</b> (Three Address Code — եռհասցեանի միջանկյալ կոդ)</li>
+    <li><b>Virtual Machine</b> (վիրտուալ մեքենա)</li>
+    <li><b>Debugger</b> (վրիպազերծիչ)</li>
+  </ul>
+
+  <p>Մշակման հոսքագիծը (pipeline)՝</p>
+  <div class="flow">Source Code → Lexer → Parser → AST → IR (TAC) → LogicalCode →
+CodeGen → Optimizer → Assembler → ExecIO → Loader + VM → Արդյունք</div>
+
+  <p class="lead" style="margin-top:14px">Աշխատանքի նպատակն է ցույց տալ կոմպիլյատորի
+  բոլոր դասական փուլերը՝ ելակոդից մինչև կատարումը սեփական վիրտուալ մեքենայի վրա։</p>
+</section>
+
+<!-- ===== 1. ARCHITECTURE ===== -->
+<section class="page break">
+  <h1>1. ԼԵԶՎԻ ՃԱՐՏԱՐԱՊԵՏՈՒԹՅՈՒՆ</h1>
+
+  <h2>1.1 Lexer (լեքսիկական վերլուծիչ)</h2>
+  <p>Lexer-ը կարդում է ելակոդը մեկ նիշ առ նիշ և բաժանում <b>token</b>-ների։ Token-ը
+  ամենափոքր իմաստ ունեցող միավորն է։ Բացի այդ՝ բաց է թողնում բացատներն ու
+  <code>//</code> մեկնաբանությունները և հաշվում տողերի համարները՝ սխալների
+  հաղորդագրությունների համար։ Ֆայլ՝ <code>include/Lexer.h</code>։</p>
+  <p>Token-ների տեսակները՝</p>
+  <ul>
+    <li><b>keywords</b> → <code>int, float, void, if, else, while, do, for, return, break, continue, switch, case, default</code></li>
+    <li><b>identifiers</b> (անուններ)</li>
+    <li><b>numbers</b> (թվեր)</li>
+    <li><b>operators</b> → <code>+ - * / %</code>, համեմատման՝ <code>== != &lt; &gt; &lt;= &gt;=</code>, տրամաբանական՝ <code>&amp;&amp; || !</code></li>
+    <li><b>punctuation</b> → <code>( ) { } [ ] ; , .</code></li>
+  </ul>
+  <p>Օրինակ՝ <code>int a = 5;</code> դառնում է՝
+  <code>INT_KW</code>, <code>VARIABLE(a)</code>, <code>ASSIGN</code>,
+  <code>NUMBER(5)</code>, <code>SEMICOLON</code>։</p>
+
+  <h2>1.2 Parser (շարահյուսական վերլուծիչ)</h2>
+  <p>Parser-ը token-ների հոսքից կառուցում է ծրագրի կառուցվածքը՝ ստուգելով
+  քերականությունը։ Կիրառվում է երկու մոտեցում՝</p>
+  <ul>
+    <li><b>Recursive Descent</b> — ծրագրի կառուցվածքի համար (հայտարարություններ, օպերատորներ)</li>
+    <li><b>Expression parser</b> (precedence climbing) — օպերատորների առաջնահերթության (priority) համար, որպեսզի, օրինակ, <code>2 + 3 * 4</code> ճիշտ հաշվարկվի</li>
+  </ul>
+  <p>Արդյունքը <b>AST</b>-ն է։ Ֆայլ՝ <code>include/Parser.h</code>։</p>
+</section>
+
+<section class="page break">
+  <h2>1.3 AST (Աբստրակտ Շարահյուսական Ծառ)</h2>
+  <p>AST-ն ծառ է, որը ցույց է տալիս ծրագրի կառուցվածքը։ Յուրաքանչյուր node
+  ներկայացնում է լեզվական կառույց։ Հիմնական node-երը (<code>NodeKind</code>)՝</p>
+  <table>
+    <tr><th>Node</th><th>Նշանակություն</th></tr>
+    <tr><td>PROGRAM</td><td>ամբողջ ծրագիրը</td></tr>
+    <tr><td>FUNC_DECL</td><td>ֆունկցիայի հայտարարություն</td></tr>
+    <tr><td>BLOCK</td><td>հրամանների բլոկ <code>{ ... }</code></td></tr>
+    <tr><td>IF_STMT / WHILE_STMT / FOR_STMT</td><td>ճյուղավորում և ցիկլեր</td></tr>
+    <tr><td>VAR_DECL</td><td>փոփոխականի հայտարարություն</td></tr>
+    <tr><td>ASSIGN_EXPR</td><td>վերագրում <code>a = ...</code></td></tr>
+    <tr><td>BINOP / UNOP</td><td>երկտեղ/միատեղ գործողություն</td></tr>
+    <tr><td>NUM_LIT</td><td>թվային հաստատուն</td></tr>
+    <tr><td>VAR_REF</td><td>փոփոխականի օգտագործում</td></tr>
+    <tr><td>CALL</td><td>ֆունկցիայի կանչ</td></tr>
+    <tr><td>RETURN_STMT</td><td>վերադարձ</td></tr>
+  </table>
+  <p>Հիշողության ապահով կառավարման համար օգտագործվում է
+  <code>std::unique_ptr</code> (smart pointer)։ Ֆայլ՝ <code>include/Common.h</code>։</p>
+  <p>AST-ի օրինակ <code>a + b</code>-ի համար՝</p>
+  <pre>      BINOP "+"
+      /       \
+  VAR_REF    VAR_REF
+    (a)        (b)</pre>
+
+  <h2>1.4 Symbol Table (սիմվոլների կառավարում / scope-եր)</h2>
+  <p>Փոփոխականների և ֆունկցիաների անունները կառավարվում են scope-երով։
+  IR գեներատորում օգտագործվում են ներդրված (nested) scope-եր՝
+  <code>std::vector&lt;std::map&gt;</code> կառուցվածքով, ինչպես նաև գլոբալ
+  փոփոխականների աղյուսակ։ Հիմնական գործողությունները՝</p>
+  <ul>
+    <li>փոփոխականի <b>հայտարարում</b> (declare) ընթացիկ scope-ում</li>
+    <li>անվան <b>որոնում</b> (lookup) ներքին scope-ից դեպի դուրս</li>
+    <li>ֆունկցիաների հասցեների պահպանում (symbol table գործարկվող ֆայլում)</li>
+  </ul>
+  <p>Կոդի գեներացիայի փուլում ֆունկցիաների անունները դառնում են
+  <b>սիմվոլներ</b>, իսկ կանչերը՝ <b>relocation</b>-ներ, որոնք լրացվում են, երբ
+  բոլոր հասցեները հայտնի են։</p>
+</section>
+
+<!-- ===== 2. COMPILER & TAC ===== -->
+<section class="page break">
+  <h1>2. ԿՈՄՊԻԼՅԱՏՈՐ ԵՎ ՄԻՋԱՆԿՅԱԼ ԿՈԴ (IR / TAC)</h1>
+
+  <h2>2.1 IR գեներատոր (Three Address Code)</h2>
+  <p>AST-ն վերածվում է <b>եռհասցեանի կոդի</b> (TAC) — պարզ հրամանների, որոնք ունեն
+  ոչ ավելի, քան երեք օպերանդ։ Հրամանի կառուցվածքը՝ <code>op, dst, src1, src2</code>։
+  Ֆայլեր՝ <code>src/IRGen.cpp</code>, <code>include/ir.h</code>։</p>
+  <p>Հիմնական op-երը՝</p>
+  <ul>
+    <li>թվաբանական՝ <code>ADD, SUB, MUL, DIV, MOD</code></li>
+    <li>համեմատում և ճյուղավորում՝ <code>CMP, BR_EQ, BR_NEQ, JMP</code></li>
+    <li>ֆունկցիաներ՝ <code>CALL, RET</code>, ստեկ՝ <code>PUSH, POP</code></li>
+    <li>ֆունկցիայի frame՝ <code>PUSH_BP, SET_BP_SP, ALLOC_STACK, RESTORE_BP</code></li>
+  </ul>
+  <p>Օգտագործվում են՝</p>
+  <ul>
+    <li><b>temp</b> ժամանակավոր փոփոխականներ → <code>t0, t1, t2 ...</code></li>
+    <li><b>label</b>-ներ → <code>L0, L1 ...</code> control flow-ի համար</li>
+  </ul>
+  <p>Օրինակ՝ <code>c = a + b</code> դառնում է՝</p>
+  <pre>t0 = a + b
+c  = t0</pre>
+
+  <h3>LogicalCode (տրամաբանական օպերատորների իջեցում)</h3>
+  <p>Առանձին փուլ <code>&amp;&amp;</code>, <code>||</code>, <code>!</code>
+  օպերատորները վերածում է համեմատությունների և ճյուղավորումների, քանի որ դրանք
+  ունեն կարճ-փակ (short-circuit) վարք։ Ֆայլ՝ <code>src/LogicalCode.cpp</code>։</p>
+
+  <h2>2.2 Optimizer (օպտիմիզատոր)</h2>
+  <p>Կիրառվում է <b>peephole</b> օպտիմիզացիա — հրամանների փոքր պատուհանում
+  ավելորդ կոդի հեռացում։ Տվյալ դեպքում հեռացվում է «մեռած» գրառումը (dead store)՝
+  երբ երկու <code>MOV_CONST</code> իրար հետևից գրում են նույն ռեգիստրը։
+  Ֆայլ՝ <code>src/optimizer.cpp</code>։</p>
+  <p>Հնարավոր օպտիմիզացիաների տեսակներ՝ Constant Folding, Copy Propagation,
+  Dead Code Elimination։ <b>Debug ռեժիմում</b> օպտիմիզացիան կարելի է անջատել, որպեսզի
+  գեներացված կոդը մնա ընթեռնելի և մոտ լինի սկզբնական IR-ին։</p>
+
+  <h3>Assembler և ExecIO</h3>
+  <p><b>Assembler</b>-ը տպում է հրամանների ընթեռնելի ցուցակը (disassembly)։
+  <b>ExecIO</b>-ն գրում է <code>.exec</code> գործարկվող ֆայլ՝ վերնագրով (signature
+  <code>EXEC</code>) և բաժիններով՝ code, data, symbols, relocations, jump tables։
+  Ֆայլեր՝ <code>src/assembler.cpp</code>, <code>src/ExecIO.cpp</code>։</p>
+</section>
+
+<!-- ===== 3. VM ===== -->
+<section class="page break">
+  <h1>3. ՎԻՐՏՈՒԱԼ ՄԵՔԵՆԱ (VM)</h1>
+  <p>Վիրտուալ մեքենան ծրագիր է, որը նմանակում է պրոցեսորին. ունի ռեգիստրներ և
+  հիշողություն և կատարում է սեփական հրամանների հավաքածուն ծրագրային ճանապարհով։
+  Ֆայլեր՝ <code>include/vm.h</code>, <code>src/vm.cpp</code>։</p>
+
+  <h2>3.1 Հիշողություն (Memory)</h2>
+  <p>Մեկ 1 ՄԲ հասցեային տարածք՝ բաժանված հատվածների (segments)՝</p>
+  <ul>
+    <li><b>Code Section</b> — հրամանները</li>
+    <li><b>Data Section</b> — գլոբալ հաստատուններ/տվյալներ</li>
+    <li><b>Heap Section</b> — դինամիկ հիշողություն</li>
+    <li><b>Stack Section</b> — ֆունկցիաների frame-ները (աճում է վերևից ներքև)</li>
+  </ul>
+
+  <h2>3.2 Պրոցեսոր (Processor)</h2>
+  <p>Աշխատում է դասական ցիկլով՝ <b>Fetch → Decode → Execute</b>, մինչև
+  <code>HALT</code> հրաման՝</p>
+  <ol>
+    <li><b>Fetch</b> — կարդալ հրամանը <code>pc</code> (ծրագրի հաշվիչ) հասցեից</li>
+    <li><b>Decode</b> — որոշել op-ը և օպերանդները</li>
+    <li><b>Execute</b> — կատարել, թարմացնել ռեգիստրները/հիշողությունը, առաջ տանել <code>pc</code></li>
+  </ol>
+  <p>VM-ն <b>ռեգիստրային</b> է և ունի՝</p>
+  <ul>
+    <li>32 ռեգիստր (նաև 16-բիթանոց տեսք), word size՝ 16 / 32 / 64 բիթ</li>
+    <li>Instruction Pointer / Program Counter (<code>pc</code>, <code>ip</code>)</li>
+    <li>Stack Pointer (<code>sp</code>), Base Pointer (<code>bp</code>), Flags (<code>ff</code>)</li>
+  </ul>
+
+  <h2>3.3 Call Stack (կանչերի ստեկ)</h2>
+  <p>Ֆունկցիայի կանչի ժամանակ պահպանվում է վերադարձի հասցեն և կանչողի
+  base pointer-ը, ստեղծվում նոր frame, և կատարումը անցնում ֆունկցիային։
+  <code>RET</code>-ի ժամանակ դրանք վերականգնվում են, արդյունքը դրվում է
+  ռեգիստր 0-ում։ Frame-ի կառուցվածքը պարունակում է՝</p>
+  <ul>
+    <li>վերադարձի հասցե (returnIP)</li>
+    <li>կանչողի base pointer</li>
+    <li>լոկալ փոփոխականներ (locals)</li>
+  </ul>
+  <p>Օգտագործվող հրամաններ՝ <code>CALL, RET, PUSH_BP, SET_BP_SP, ALLOC_STACK,
+  RESTORE_BP, LOAD_LOCAL, STORE_LOCAL</code>։</p>
+</section>
+
+<!-- ===== 4. DEBUGGER ===== -->
+<section class="page break">
+  <h1>4. DEBUGGER (ՎՐԻՊԱԶԵՐԾԻՉ)</h1>
+  <p>Debugger-ը թույլ է տալիս հետևել ծրագրի կատարմանը քայլ առ քայլ։
+  Ֆայլեր՝ <code>include/debugger.h</code>, <code>src/debugger.cpp</code>։</p>
+
+  <h2>4.1 Կառուցվածք</h2>
+  <p>Կատարումը բաժանված է առանձին քայլերի՝ <code>runOne()</code> / <code>step()</code>,
+  ինչը թույլ է տալիս կանգ առնել ցանկացած հրամանի վրա։ Կա նաև
+  <b>Debug build</b>, որը տպում է ամեն հրամանի <b>trace</b> (հետք)՝ ցույց տալով
+  <code>pc</code>-ն, op-ը և օպերանդները, որպեսզի երևա fetch-decode-execute ցիկլը՝</p>
+  <pre>[trace] pc=0    PUSH_BP     rd=0  rs1=0  rs2=0
+[trace] pc=2    MOV_CONST   rd=1  rs1=0  rs2=0
+[trace] pc=3    ADD         rd=2  rs1=1  rs2=0
+...
+Result R0 = 15 (expected 15)</pre>
+
+  <h2>4.2 Breakpoints (կանգառի կետեր)</h2>
+  <p>Կանգառ կարելի է դնել ըստ հրամանի համարի (PC)։ Կոդն ունի նաև ֆունկցիաների
+  symbol table, ինչը հնարավորություն է տալիս կապել կանգառները ֆունկցիայի անվան հետ։</p>
+
+  <h2>4.3 Հրամաններ (REPL)</h2>
+  <p>Ինտերակտիվ ռեժիմում (<code>--debug</code>) հասանելի են հրամանները՝</p>
+  <table>
+    <tr><th>Հրաման</th><th>Գործողություն</th></tr>
+    <tr><td><code>s</code> (step)</td><td>կատարել մեկ հրաման</td></tr>
+    <tr><td><code>c</code> (continue)</td><td>շարունակել մինչև breakpoint</td></tr>
+    <tr><td><code>r</code> (registers)</td><td>ցույց տալ ռեգիստրները</td></tr>
+    <tr><td><code>m</code> (memory)</td><td>ցույց տալ հատվածները (segments)</td></tr>
+    <tr><td><code>b N</code> (break)</td><td>դնել breakpoint PC=N-ում</td></tr>
+    <tr><td><code>q</code> (quit)</td><td>դուրս գալ</td></tr>
+  </table>
+</section>
+
+<!-- ===== 5. BUILD ===== -->
+<section class="page break">
+  <h1>5. BUILD ՀԱՄԱԿԱՐԳ (Release և Debug)</h1>
+  <p>Նախագիծը հավաքվում է երկու ստանդարտ կոնֆիգուրացիայով՝ և՛ <code>Makefile</code>-ով,
+  և՛ <code>CMake</code>-ով։</p>
+  <table>
+    <tr><th>Կոնֆիգուրացիա</th><th>Դրոշներ</th><th>Արդյունք</th></tr>
+    <tr><td>Release</td><td><code>-O2 -DNDEBUG</code> (օպտիմիզացված)</td><td><code>build/release/compiler</code></td></tr>
+    <tr><td>Debug</td><td><code>-O0 -g3 -DDEBUG_BUILD</code> + sanitizer-ներ + gdb սիմվոլներ</td><td><code>build/debug/compiler</code></td></tr>
+  </table>
+  <p>Հրամանները՝</p>
+  <pre>make            # Release
+make debug      # Debug (trace + sanitizers)
+make run        # հավաքել և գործարկել Release
+make run-debug  # հավաքել և գործարկել Debug</pre>
+  <p>Debug build-ը սահմանում է <code>DEBUG_BUILD</code> մակրոն, որն ակտիվացնում է
+  վիրտուալ մեքենայի հրահանգ առ հրահանգ trace-ը։</p>
+
+  <h3>Ցուցադրական ծրագիր</h3>
+  <pre>int main() {
+    int a = 5;
+    int b = 10;
+    int c = 0;
+    if (a &lt; b) {
+        c = a + b;
+    }
+    return c;
+}</pre>
+  <p>Քանի որ <code>a &lt; b</code> ճշմարիտ է, <code>c = 15</code>, և մեքենան
+  վերադարձնում է <b>R0 = 15</b>։</p>
+</section>
+
+<!-- ===== CONCLUSION ===== -->
+<section class="page break">
+  <h1>ԵԶՐԱԿԱՑՈՒԹՅՈՒՆ</h1>
+  <p>Աշխատանքի ընթացքում C++17 լեզվով իրականացվել է ամբողջական համակարգ, որը
+  ներառում է կոմպիլյատորի բոլոր դասական փուլերը՝</p>
+  <ul>
+    <li>Lexer (լեքսիկական վերլուծիչ)</li>
+    <li>Parser (շարահյուսական վերլուծիչ)</li>
+    <li>AST (աբստրակտ շարահյուսական ծառ)</li>
+    <li>IR / TAC (եռհասցեանի միջանկյալ կոդ)</li>
+    <li>Optimizer (օպտիմիզատոր)</li>
+    <li>Virtual Machine (վիրտուալ մեքենա)</li>
+    <li>Debugger (վրիպազերծիչ)</li>
+  </ul>
+  <p>Բոլոր մոդուլներն աշխատում են կայուն. ցուցադրական ծրագիրը հաջողությամբ
+  կոմպիլյացվում և կատարվում է՝ վերադարձնելով ճիշտ արդյունքը (15)՝ բոլոր
+  ռեժիմներում (սովորական, <code>--exec</code>, <code>--debug</code>)։ Ավելացվել է նաև
+  ստանդարտ Debug build՝ հրահանգների trace-ով և sanitizer-ներով, ինչը հեշտացնում է
+  սխալների հայտնաբերումը։</p>
+
+  <h1 style="margin-top:30px">ԳՐԱԿԱՆՈՒԹՅՈՒՆ</h1>
+  <ol>
+    <li>Aho, Lam, Sethi, Ullman — “Compilers: Principles, Techniques, and Tools”</li>
+    <li>Andrew W. Appel — “Modern Compiler Implementation”</li>
+    <li>Bjarne Stroustrup — “The C++ Programming Language”</li>
+    <li>cppreference.com — C++ ստանդարտ գրադարանի փաստաթղթեր</li>
+  </ol>
+</section>
+
+</body>
+</html>
