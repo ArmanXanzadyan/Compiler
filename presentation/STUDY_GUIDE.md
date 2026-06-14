@@ -26,6 +26,7 @@ source code
    -> LogicalCode (lower && || ! into branches)
    -> CodeGenIR   (IR -> binary instructions)
    -> Optimizer   (small cleanup)
+   -> Linker      (resolve symbols & relocations)
    -> Assembler   (readable listing)
    -> ExecIO      (write .exec file)
    -> Loader + VM (run it)  -> result
@@ -42,6 +43,7 @@ source code
 | `src/LogicalCode.cpp` | Rewrites `&&`, `||`, `!` into compares and branches |
 | `src/CodeGenIR.cpp` | Turns IR into the VM's binary instructions |
 | `src/optimizer.cpp` | Peephole optimization (removes dead writes) |
+| `src/linker.cpp` | Linker: resolves call relocations against the symbol table |
 | `src/assembler.cpp` | Prints a human-readable disassembly |
 | `src/ExecIO.cpp` | Writes/reads the `.exec` executable file |
 | `src/loader.cpp` | Loads a program into the VM |
@@ -113,20 +115,30 @@ A tiny **peephole optimizer**: it scans short windows of instructions and
 removes obvious waste. Here it drops a `MOV_CONST` if the very next instruction
 overwrites the same register (a dead store). Code: `src/optimizer.cpp`.
 
-### Phase 7 — Assembler
+### Phase 7 — Linker
+
+The **linker** resolves symbolic references into real addresses. The code
+generator does not yet know where each function lives when it emits a `CALL`, so
+it records a **relocation** (the call's instruction index plus the target
+function name) and a **symbol** for each function (name plus address). The
+linker walks the relocation table, looks up each name in the symbol table, and
+patches the real address into the call instruction. After linking, the program
+has no unresolved references. Code: `src/linker.cpp`, `include/linker.h`.
+
+### Phase 8 — Assembler
 
 Prints a readable listing of the instructions (the disassembly) so a human can
 inspect what was generated. It can also parse that text back into a program.
 Code: `src/assembler.cpp`.
 
-### Phase 8 — ExecIO (the executable file)
+### Phase 9 — ExecIO (the executable file)
 
 Writes a self-describing `.exec` file, similar in spirit to a real ELF file. It
 has a **header** (signature `EXEC`, word size, section table) followed by
 **sections**: code, data (constants), symbol table, relocations, and jump
 tables. It can also load such a file back. Code: `src/ExecIO.cpp`.
 
-### Phase 9 — Loader + Virtual Machine
+### Phase 10 — Loader + Virtual Machine
 
 The **loader** places the program into the VM and resets the registers. The
 **virtual machine** then runs it using the classic cycle:
@@ -284,6 +296,26 @@ It is a peephole optimizer: it looks at a small window of instructions and
 removes obvious waste. In our case, if two `MOV_CONST` instructions write the
 same register in a row, the first is dead and is removed.
 
+### Linker
+
+**Q20a. What is a linker and does this project have one?**
+Yes. The linker resolves symbolic references into concrete addresses. In this
+project it takes the relocation table and the symbol table produced by code
+generation, finds the address of each called function by name, and patches that
+address into the `CALL` instruction. Code: `src/linker.cpp`.
+
+**Q20b. Why is linking a separate step from code generation?**
+When the code generator emits a `CALL`, the target function's address may not be
+known yet (the function could be defined later). So it leaves a placeholder and
+records a relocation. Once all functions have addresses, the linker fills in the
+placeholders. Separating the two keeps each phase focused and matches how real
+toolchains split compiling and linking.
+
+**Q20c. What happens if a called function does not exist?**
+The linker counts it as an unresolved reference and reports it (it returns
+false and `unresolvedCount()` is greater than zero), instead of silently
+producing a broken program.
+
 **Q21. What is in the `.exec` file?**
 A header with a signature (`EXEC`), the word size, and a section table; then
 sections for code, data (constants), symbols, relocations, and jump tables. It
@@ -375,10 +407,11 @@ same IR could target a different machine by changing only the back end.
 ## Quick revision checklist
 
 - Phases in order: Lexer, Parser, IRGen, LogicalCode, CodeGenIR, Optimizer,
-  Assembler, ExecIO, Loader + VM.
+  Linker, Assembler, ExecIO, Loader + VM.
 - Lexer = text to tokens. Parser = tokens to AST.
 - IR = simple three-address instructions; logical ops become branches.
 - Code generator = binary instructions + constant pool + symbols + relocations.
+- Linker = resolves call relocations against the symbol table.
 - VM = register machine, 1 MB segmented memory, fetch-decode-execute until HALT.
 - Two builds: Release (`-O2`) and Debug (`-O0 -g3 -DDEBUG_BUILD`, with trace +
   sanitizers).

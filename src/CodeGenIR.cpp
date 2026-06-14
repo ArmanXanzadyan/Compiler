@@ -133,10 +133,8 @@ Program CodeGenIR::generate(const IRProgram& ir) {
         if (p.useRs1) prog_.code[p.idx].rs1 = labels_[p.label];
         else prog_.code[p.idx].rs2 = labels_[p.label];
     }
-    for (auto& r : prog_.relocs) {
-        auto it = funcAddrs_.find(r.targetName);
-        if (it != funcAddrs_.end())
-            prog_.code[r.instrIndex].rs1 = it->second;
-    }
+    // Note: function-call relocations are intentionally left unresolved here.
+    // Resolving symbol references into concrete addresses is the Linker's job
+    // (see src/linker.cpp), keeping code generation and linking separate.
     return std::move(prog_);
 }

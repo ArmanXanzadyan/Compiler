@@ -7,6 +7,7 @@
 #include "Parser.h"
 #include "assembler.h"
 #include "debugger.h"
+#include "linker.h"
 #include "loader.h"
 #include "optimizer.h"
 #include "vm.h"
@@ -88,6 +89,13 @@ int main(int argc, char* argv[]) {
     CodeGenIR backend;
     Program   prog = backend.generate(ir);
     Optimizer().optimize(prog);
+
+    std::cout << "[4b] Linker -> resolve symbols & relocations\n";
+    Linker linker;
+    if (!linker.link(prog)) {
+        std::cerr << "Linker: " << linker.unresolvedCount()
+                  << " unresolved reference(s)\n";
+    }
 
     Assembler assembler;
     std::cout << "\n--- Assembler listing ---\n";

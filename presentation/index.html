@@ -266,9 +266,10 @@
       <div class="stage"><div class="num">4</div><div class="nm">LogicalCode</div><div class="ds">lower &amp;&amp; || ! to branches</div></div>
       <div class="stage"><div class="num">5</div><div class="nm">CodeGenIR</div><div class="ds">IR &rarr; binary instructions</div></div>
       <div class="stage"><div class="num">6</div><div class="nm">Optimizer</div><div class="ds">peephole cleanup</div></div>
-      <div class="stage"><div class="num">7</div><div class="nm">Assembler</div><div class="ds">readable disassembly</div></div>
-      <div class="stage"><div class="num">8</div><div class="nm">ExecIO</div><div class="ds">write .exec file</div></div>
-      <div class="stage"><div class="num">9</div><div class="nm">Loader + VM</div><div class="ds">execute the program</div></div>
+      <div class="stage"><div class="num">7</div><div class="nm">Linker</div><div class="ds">resolve symbols &amp; relocs</div></div>
+      <div class="stage"><div class="num">8</div><div class="nm">Assembler</div><div class="ds">readable disassembly</div></div>
+      <div class="stage"><div class="num">9</div><div class="nm">ExecIO</div><div class="ds">write .exec file</div></div>
+      <div class="stage"><div class="num">10</div><div class="nm">Loader + VM</div><div class="ds">execute the program</div></div>
     </div>
   </section>
 
@@ -363,6 +364,32 @@ c  = t0</pre>
       <li><b>Assembler</b> prints a readable listing of the instructions.</li>
       <li><b>ExecIO</b> writes a self-describing <code class="inline">.exec</code> file with a header and sections (code, data, symbols, relocs, jump table).</li>
     </ul>
+  </section>
+
+  <!-- 7b. LINKER -->
+  <section class="slide">
+    <div class="eyebrow">Linker</div>
+    <h2>Linker &mdash; resolving symbols</h2>
+    <p class="sub">When the code generator emits a function call, the target
+      address may not be known yet. It leaves a placeholder and records a
+      relocation; the linker fills in the real address.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Inputs</h3>
+        <ul>
+          <li><b>Symbols</b>: function name + address</li>
+          <li><b>Relocations</b>: call site + target name</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>What it does</h3>
+        <pre>for each relocation r:
+  addr = symbols[r.name]
+  code[r.site].rs1 = addr</pre>
+        <p style="margin-top:10px">Reports any unresolved reference.</p>
+      </div>
+    </div>
+    <p style="margin-top:16px"><code class="inline">include/linker.h</code> &middot; <code class="inline">src/linker.cpp</code></p>
   </section>
 
   <!-- 8. VM -->
@@ -491,6 +518,7 @@ Result R0 = <span class="n">15</span> (expected 15)</pre>
       <span class="tag">Lexer</span><span class="tag">Parser</span>
       <span class="tag">IRGen</span><span class="tag">LogicalCode</span>
       <span class="tag">CodeGenIR</span><span class="tag">Optimizer</span>
+      <span class="tag">Linker</span>
       <span class="tag">Assembler</span><span class="tag">ExecIO</span>
       <span class="tag">Loader</span><span class="tag">Virtual Machine</span>
     </div>

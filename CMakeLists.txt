@@ -43,6 +43,7 @@ set(COMPILER_SOURCES
     src/assembler.cpp
     src/ExecIO.cpp
     src/loader.cpp
+    src/linker.cpp
     src/debugger.cpp
     src/vm.cpp
 )
