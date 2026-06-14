@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Կոդի բացատրություն — Կոմպիլյատոր և Վիրտուալ մեքենա</title>
+<style>
+  :root{ --ink:#16202e; --muted:#4b5b6e; --accent:#1f5fae; --line:#cdd7e2; --code-bg:#f3f5f8; --soft:#f7f9fb; --kw:#7c3aed; --cm:#6b7f99; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ font-family:"DejaVu Sans","Noto Sans Armenian","Segoe UI",Arial,sans-serif; color:var(--ink); line-height:1.55; font-size:14.5px; background:#fff; }
+  .page{ width:210mm; margin:0 auto; padding:14mm 18mm; background:#fff; }
+  .page.break{ page-break-after:always; }
+  .cover{ display:flex; flex-direction:column; align-items:center; text-align:center; min-height:250mm; padding:30mm 22mm 0; }
+  .cover .doctype{ font-size:28px; font-weight:800; letter-spacing:1px; color:var(--accent); margin:18px 0 36px; border-top:2px solid var(--line); border-bottom:2px solid var(--line); padding:16px 0; width:100%; }
+  .cover .meta{ text-align:left; width:100%; max-width:130mm; font-size:15px; }
+  .cover .meta div{ margin:7px 0; } .cover .meta b{ display:inline-block; min-width:110px; color:var(--muted); font-weight:600; }
+  .cover .city{ margin-top:auto; padding-top:60px; }
+  h1{ font-size:21px; color:var(--accent); margin:0 0 10px; }
+  h2{ font-size:17px; color:var(--accent); margin:16px 0 7px; border-bottom:2px solid var(--line); padding-bottom:4px; }
+  h3{ font-size:15px; color:var(--ink); margin:12px 0 5px; }
+  p{ margin:6px 0; } ul,ol{ margin:6px 0 6px 6px; padding-left:22px; } li{ margin:3px 0; }
+  code{ background:var(--code-bg); border:1px solid var(--line); border-radius:4px; padding:1px 5px; font-family:"DejaVu Sans Mono",Consolas,monospace; font-size:.9em; }
+  pre{ background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:9px 12px; margin:7px 0; overflow:auto; font-family:"DejaVu Sans Mono",Consolas,monospace; font-size:12px; line-height:1.45; white-space:pre-wrap; }
+  pre .k{ color:var(--kw); } pre .c{ color:var(--cm); font-style:italic; }
+  .lead{ color:var(--muted); }
+  .note{ border-left:4px solid var(--accent); background:var(--soft); padding:8px 14px; border-radius:6px; margin:8px 0; }
+  .fname{ display:inline-block; background:#eef3fb; border:1px solid var(--line); border-radius:5px; padding:2px 8px; font-family:"DejaVu Sans Mono",Consolas,monospace; font-size:13px; color:var(--accent); margin-bottom:6px; }
+  table{ border-collapse:collapse; width:100%; margin:7px 0; font-size:13.5px; }
+  th,td{ border:1px solid var(--line); padding:5px 9px; text-align:left; vertical-align:top; } th{ background:var(--soft); }
+  @media print{ @page{ size:A4; margin:0; } .page{ margin:0; } }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="page cover break">
+  <div style="font-size:13px;color:var(--muted)">ՀԱՅԱՍՏԱՆԻ ԱԶԳԱՅԻՆ ՊՈԼԻՏԵԽՆԻԿԱԿԱՆ ՀԱՄԱԼՍԱՐԱՆ</div>
+  <div style="font-size:14px;color:var(--muted);margin-bottom:40px">ՏՀՏԷ ԻՆՍՏԻՏՈՒՏ</div>
+  <div class="doctype">ԿՈԴԻ ԲԱՑԱՏՐՈՒԹՅՈՒՆ<br><span style="font-size:16px;font-weight:600;letter-spacing:0">Ինչպես է աշխատում ծրագիրը (քայլ առ քայլ)</span></div>
+  <div class="meta">
+    <div><b>Թեմա՝</b> Կոմպիլյատորի և վիրտուալ մեքենայի մշակումը</div>
+    <div><b>Ուսանող՝</b> Արման Խանզադյան</div>
+    <div><b>Դասախոս՝</b> Խաչատրյան Տ.</div>
+  </div>
+  <div class="city">Երևան 2026</div>
+</section>
+
+<!-- OVERVIEW -->
+<section class="page break">
+  <h1>ԸՆԴՀԱՆՈՒՐ ՊԱՏԿԵՐ</h1>
+  <p>Այս փաստաթուղթը ցույց է տալիս, թե <b>ինչպես է աշխատում կոդը</b>՝ ֆայլ առ ֆայլ,
+  իրական հատվածներով (snippet)։ Վերջում կան <b>կոդի վերաբերյալ հարցեր և
+  պատասխաններ</b>, որոնք դասախոսը կարող է տալ կոդը դիտելիս։</p>
+  <p>Ծրագիրը կազմված է փուլերից։ Ամեն ֆայլ պատասխանատու է մեկ փուլի համար.</p>
+  <table>
+    <tr><th>Ֆայլ</th><th>Ինչ է անում</th></tr>
+    <tr><td><code>include/Lexer.h</code></td><td>տեքստ → token-ներ</td></tr>
+    <tr><td><code>include/Parser.h</code></td><td>token-ներ → AST</td></tr>
+    <tr><td><code>src/IRGen.cpp</code></td><td>AST → միջանկյալ կոդ (TAC)</td></tr>
+    <tr><td><code>src/LogicalCode.cpp</code></td><td>&amp;&amp; || ! → ճյուղավորումներ</td></tr>
+    <tr><td><code>src/CodeGenIR.cpp</code></td><td>IR → երկուական հրամաններ</td></tr>
+    <tr><td><code>src/optimizer.cpp</code></td><td>peephole օպտիմիզացիա</td></tr>
+    <tr><td><code>src/linker.cpp</code></td><td>սիմվոլների/relocation-ների լուծում</td></tr>
+    <tr><td><code>src/ExecIO.cpp</code></td><td>.exec ֆայլի գրառում/կարդացում</td></tr>
+    <tr><td><code>src/vm.cpp</code></td><td>վիրտուալ մեքենա (կատարում)</td></tr>
+    <tr><td><code>src/debugger.cpp</code></td><td>վրիպազերծիչ</td></tr>
+    <tr><td><code>src/main.cpp</code></td><td>միացնում է բոլոր փուլերը</td></tr>
+  </table>
+  <div class="note">Կատարման մուտքը <code>main()</code>-ն է <code>src/main.cpp</code>-ում,
+  որը հերթականությամբ կանչում է բոլոր փուլերը։</div>
+</section>
+
+<!-- LEXER -->
+<section class="page break">
+  <h1>1. LEXER — ինչպես է աշխատում</h1>
+  <div class="fname">include/Lexer.h</div>
+  <p><code>tokenize()</code>-ը պտտվում է տեքստի վրա, բաց է թողնում բացատներն ու
+  մեկնաբանությունները, ապա ըստ առաջին նիշի որոշում՝ ինչ token կարդալ.</p>
+  <pre><span class="k">while</span> (pos &lt; src.size()) {
+    skipWhitespace();
+    <span class="c">// // մեկնաբանություն</span>
+    <span class="k">if</span> (src[pos]=='/' &amp;&amp; src[pos+1]=='/') { ...բաց թողնել տողը... }
+    <span class="k">char</span> c = src[pos];
+    <span class="k">if</span> (isdigit(c))       tokens.push_back(readNumber());
+    <span class="k">else if</span> (isalpha(c)||c=='_') tokens.push_back(readIdent());
+    <span class="k">else</span>                  tokens.push_back(readSymbol());
+}</pre>
+  <p><b>Բանալի բառերը</b> տարբերվում են անուններից <code>readIdent()</code>-ում.
+  կարդում է ամբողջ բառը, ապա համեմատում ցուցակի հետ.</p>
+  <pre>std::string t = ...ամբողջ բառը...;
+<span class="k">if</span> (t=="if")    <span class="k">return</span> { TokenType::IF, t, line };
+<span class="k">if</span> (t=="while") <span class="k">return</span> { TokenType::WHILE, t, line };
+<span class="c">// եթե ոչ մի keyword չհամընկնի՝ սա identifier է</span>
+<span class="k">return</span> { TokenType::VARIABLE, t, line };</pre>
+  <p><b>Երկնիշ օպերատորները</b> (<code>== != &lt;= &amp;&amp;</code>) ճանաչվում են «peek»-ով.
+  կարդալուց հետո նայում է հաջորդ նիշին.</p>
+  <pre><span class="k">case</span> '=':
+    <span class="k">if</span> (peek()=='=') { pos++; <span class="k">return</span> {EQ, "=="}; }
+    <span class="k">return</span> {ASSIGN, "="};</pre>
+</section>
+
+<!-- PARSER -->
+<section class="page break">
+  <h1>2. PARSER — ինչպես է աշխատում</h1>
+  <div class="fname">include/Parser.h</div>
+  <p>Parser-ը <b>ռեկուրսիվ իջնող</b> է։ <code>parseProgram()</code>-ը կարդում է
+  հայտարարությունները մինչև ֆայլի վերջ.</p>
+  <pre><span class="k">while</span> (!check(END_OF_FILE))
+    prog-&gt;children.push_back(parseDeclaration());</pre>
+  <p><b>Օպերատորների առաջնահերթությունը</b> իրականացված է ֆունկցիաների շղթայով՝
+  ամեն մակարդակ կանչում է ավելի բարձր առաջնահերթության մակարդակը։ Այսպես
+  <code>*</code>-ը խմբավորվում է <code>+</code>-ից առաջ.</p>
+  <pre>parseAddSub() {           <span class="c">// + -</span>
+    left = parseMulDiv();   <span class="c">// նախ * / %</span>
+    <span class="k">while</span> (PLUS || MINUS) {
+        op = advance();
+        node = BINOP(op);
+        node.children = { left, parseMulDiv() };
+        left = node;
+    }
+    <span class="k">return</span> left;
+}</pre>
+  <p>Արդյունքում ստացվում է AST։ Օրինակ՝ <code>2 + 3 * 4</code>-ի համար
+  <code>3 * 4</code>-ը դառնում է ներքին հանգույց, ուստի ճիշտ հաշվարկվում է որպես 14։</p>
+  <div class="note"><b>Սխալների մշակում.</b> <code>consume()</code>-ը, եթե սպասվող token-ը
+  չի գտնում, նետում է սխալ՝ տողի համարով. <code>"Parse error at line N: ..."</code>։</div>
+</section>
+
+<!-- IRGen -->
+<section class="page break">
+  <h1>3. IRGen — AST-ից միջանկյալ կոդ</h1>
+  <div class="fname">src/IRGen.cpp</div>
+  <p><code>emitExpr()</code>-ը ռեկուրսիվ իջնում է AST-ով և արտադրում
+  եռհասցեանի հրամաններ՝ ժամանակավոր <code>t0, t1</code> փոփոխականներով.</p>
+  <pre><span class="k">case</span> BINOP: {
+    std::string l = emitExpr(child0);  <span class="c">// ձախ կողմ</span>
+    std::string r = emitExpr(child1);  <span class="c">// աջ կողմ</span>
+    std::string t = fresh();           <span class="c">// նոր t0, t1 ...</span>
+    emit({ IROp::ADD, t, l, r });       <span class="c">// t = l + r</span>
+    <span class="k">return</span> t;
+}</pre>
+  <p><b>Վերագրումը</b> (<code>c = a + b</code>) մշակվում է այսպես՝ նախ հաշվում աջ
+  կողմը, ապա պատճենում ձախ կողմ.</p>
+  <pre><span class="k">case</span> ASSIGN_EXPR: {
+    std::string rhs = emitExpr(child1);
+    std::string dst = emitExpr(child0);
+    emit({ IROp::MOV_REG, dst, rhs, "" });
+    <span class="k">return</span> dst;
+}</pre>
+  <div class="note"><b>Ուղղված սխալ.</b> Սկզբում <code>ASSIGN_EXPR</code>-ի մշակումը
+  բացակայում էր, ուստի վերագրումները կորչում էին, և ծրագիրը սխալ վերադարձնում էր 0։
+  Այս <code>case</code>-ը ավելացնելուց հետո ծրագիրը ճիշտ վերադարձնում է 15։</div>
+</section>
+
+<!-- CodeGen + Optimizer -->
+<section class="page break">
+  <h1>4. CodeGenIR և Optimizer</h1>
+  <div class="fname">src/CodeGenIR.cpp</div>
+  <p>Կոդի գեներատորը IR-ից արտադրում է ֆիքսված 4-բայթանոց հրամաններ։ IR-ի
+  անունները ստանում են ռեգիստրների համարներ <code>regOf()</code>-ով.</p>
+  <pre><span class="k">case</span> IROp::ADD: {
+    <span class="k">int</span> d = regOf(dst), a = regOf(src1), b = regOf(src2);
+    emit({ OpCode::ADD, d, a, b });   <span class="c">// երկուական հրաման</span>
+}</pre>
+  <p>Ֆունկցիայի կանչը գրանցում է <b>relocation</b> (հասցեն դեռ հայտնի չէ).</p>
+  <pre><span class="k">case</span> IROp::CALL:
+    emit({ OpCode::CALL, d, 0, 0 });
+    prog_.relocs.push_back({ ci, src1 }); <span class="c">// թիրախ՝ անունով</span></pre>
+  <div class="fname" style="margin-top:10px">src/optimizer.cpp</div>
+  <p>Peephole օպտիմիզացիան հեռացնում է «մեռած» գրառումը՝ երբ երկու
+  <code>MOV_CONST</code> իրար հետևից գրում են նույն ռեգիստրը.</p>
+  <pre><span class="k">if</span> (a.op==MOV_CONST &amp;&amp; b.op==MOV_CONST &amp;&amp; a.rd==b.rd)
+    code.erase(code.begin()+i);   <span class="c">// առաջինը ավելորդ է</span></pre>
+</section>
+
+<!-- Linker -->
+<section class="page break">
+  <h1>5. LINKER — հասցեների լուծում</h1>
+  <div class="fname">src/linker.cpp</div>
+  <p>Linker-ը անցնում է relocation-ների վրայով, ամեն թիրախ որոնում է symbol
+  table-ում ըստ անվան և իրական հասցեն գրում կանչի հրամանի մեջ.</p>
+  <pre><span class="c">// անուն → հասցե աղյուսակ</span>
+<span class="k">for</span> (s : prog.symbols) symbolAddr[s.name] = s.address;
+
+<span class="c">// ամեն կանչ լրացնել իրական հասցեով</span>
+<span class="k">for</span> (r : prog.relocs) {
+    <span class="k">auto</span> it = symbolAddr.find(r.targetName);
+    <span class="k">if</span> (it == symbolAddr.end()) { unresolved_++; <span class="k">continue</span>; }
+    prog.code[r.instrIndex].rs1 = it-&gt;second;
+}
+<span class="k">return</span> unresolved_ == 0;</pre>
+  <p>Եթե կանչվող ֆունկցիան չի գտնվում, այն հաշվվում է որպես <b>unresolved
+  reference</b> և հաղորդվում է սխալ։ Կապակցումը առանձին փուլ է կոդի գեներացիայից։</p>
+</section>
+
+<!-- VM -->
+<section class="page break">
+  <h1>6. VIRTUAL MACHINE — կատարում</h1>
+  <div class="fname">src/vm.cpp</div>
+  <p>Մեքենան աշխատում է <b>fetch → decode → execute</b> ցիկլով.</p>
+  <pre><span class="k">void</span> VM::runOne() {
+    Instruction instr = fetch();   <span class="c">// 1. կարդալ pc-ից</span>
+    pc++;
+    decode(instr);                 <span class="c">// 2. վերծանել</span>
+    execute();                     <span class="c">// 3. կատարել</span>
+}
+<span class="k">void</span> VM::run() {
+    <span class="k">while</span> (running &amp;&amp; pc &lt; code.size()) runOne();
+}</pre>
+  <p><code>execute()</code>-ը մեծ <code>switch</code> է ըստ op-ի. օրինակ.</p>
+  <pre><span class="k">case</span> OpCode::ADD:
+    regs[rd] = regs[rs1] + regs[rs2]; <span class="k">break</span>;
+<span class="k">case</span> OpCode::BR_EQ:
+    <span class="k">if</span> (regs[rd]==0) pc = rs2; <span class="k">break</span>; <span class="c">// պայմանական անցում</span>
+<span class="k">case</span> OpCode::CALL:
+    callStack.push_back(pc); ... pc = rs1; <span class="k">break</span>;
+<span class="k">case</span> OpCode::HALT:
+    running = <span class="k">false</span>; <span class="k">break</span>;</pre>
+  <p>Ունի 32 ռեգիստր, <code>pc</code>, <code>sp</code>, <code>bp</code>, դրոշներ,
+  և 1 ՄԲ հիշողություն (Code/Data/Heap/Stack)։</p>
+</section>
+
+<!-- Debug build -->
+<section class="page break">
+  <h1>7. DEBUG BUILD — trace</h1>
+  <div class="fname">src/vm.cpp (DEBUG_BUILD)</div>
+  <p>Debug ռեժիմում ամեն հրաման տպվում է կատարումից առաջ՝ <code>#ifdef
+  DEBUG_BUILD</code> պայմանով.</p>
+  <pre><span class="k">#ifdef</span> DEBUG_BUILD
+    fprintf(stderr, "[trace] pc=%-4llu %-11s rd=%u rs1=%u rs2=%u\n",
+            pc, opCodeNames[instr.op], instr.rd, instr.rs1, instr.rs2);
+<span class="k">#endif</span></pre>
+  <p>Արդյունքում երևում է fetch-decode-execute ցիկլը.</p>
+  <pre>[trace] pc=0  PUSH_BP    rd=0 rs1=0 rs2=0
+[trace] pc=3  ADD        rd=2 rs1=1 rs2=0
+...
+Result R0 = 15 (expected 15)</pre>
+  <p>Հավաքում՝ <code>make debug</code>. Release՝ <code>make</code>։</p>
+</section>
+
+<!-- CODE Q&A 1 -->
+<section class="page break">
+  <h1>ԿՈԴԻ ՀԱՐՑԵՐ ԵՎ ՊԱՏԱՍԽԱՆՆԵՐ (1)</h1>
+  <p class="lead">Հարցեր, որ դասախոսը կարող է տալ կոդը դիտելիս։</p>
+
+  <h3>Հ1. Որտեղի՞ց է սկսվում ծրագրի կատարումը։</h3>
+  <p><code>main()</code>-ից՝ <code>src/main.cpp</code>-ում, որը հերթականությամբ կանչում է
+  Lexer, Parser, IRGen, LogicalCode, CodeGenIR, Optimizer, Linker, ExecIO, VM։</p>
+
+  <h3>Հ2. Ինչպե՞ս է lexer-ը keyword-ը տարբերում identifier-ից։</h3>
+  <p><code>readIdent()</code>-ը կարդում է ամբողջ բառը, ապա համեմատում keyword-ների
+  ցուցակի հետ։ Եթե համընկնում է՝ keyword token, հակառակ դեպքում՝ <code>VARIABLE</code>։</p>
+
+  <h3>Հ3. Ինչպե՞ս է ճանաչվում <code>==</code>-ը <code>=</code>-ից։</h3>
+  <p><code>readSymbol()</code>-ում, <code>=</code> կարդալուց հետո «peek»-ով նայում է
+  հաջորդ նիշին. եթե <code>=</code> է՝ <code>EQ</code> (<code>==</code>), այլապես՝ <code>ASSIGN</code>։</p>
+
+  <h3>Հ4. Ինչպե՞ս է parser-ը ապահովում, որ <code>*</code>-ը նախ է <code>+</code>-ից։</h3>
+  <p>Առաջնահերթության շղթայով. <code>parseAddSub()</code>-ը օպերանդների համար կանչում է
+  <code>parseMulDiv()</code>, ուստի բազմապատկումը խմբավորվում է ավելի շուտ։</p>
+
+  <h3>Հ5. Ի՞նչ է <code>fresh()</code>-ը IRGen-ում։</h3>
+  <p>Վերադարձնում է նոր ժամանակավոր փոփոխական (<code>t0, t1, ...</code>) միջանկյալ
+  արդյունքները պահելու համար։</p>
+
+  <h3>Հ6. Ինչպե՞ս է մշակվում <code>c = a + b</code> վերագրումը։</h3>
+  <p><code>ASSIGN_EXPR</code> case-ում՝ նախ հաշվվում է աջ կողմը (<code>a+b</code>), ապա
+  <code>MOV_REG</code>-ով արդյունքը պատճենվում <code>c</code>-ի մեջ։</p>
+
+  <h3>Հ7. Ինչու՞ է ծրագիրը վերադարձնում 15։</h3>
+  <p><code>a=5</code>, <code>b=10</code>, <code>a&lt;b</code> ճշմարիտ է, ուստի <code>c=a+b=15</code>,
+  որը <code>return</code>-վում է ռեգիստր 0-ում (R0)։</p>
+</section>
+
+<!-- CODE Q&A 2 -->
+<section class="page break">
+  <h1>ԿՈԴԻ ՀԱՐՑԵՐ ԵՎ ՊԱՏԱՍԽԱՆՆԵՐ (2)</h1>
+
+  <h3>Հ8. Ի՞նչ է անում <code>regOf()</code>-ը CodeGenIR-ում։</h3>
+  <p>IR-ի անունը (<code>t0</code>, <code>a</code>) կապում է ռեգիստրի համարի հետ։ Եթե
+  անունը նոր է՝ տալիս է հաջորդ ազատ ռեգիստրը։</p>
+
+  <h3>Հ9. Ի՞նչ է relocation-ը կոդում։</h3>
+  <p>Գրառում է <code>{instrIndex, targetName}</code> ֆունկցիայի կանչի համար, քանի որ
+  հասցեն դեռ հայտնի չէ։ Հետո linker-ը այն լրացնում է իրական հասցեով։</p>
+
+  <h3>Հ10. Ինչպե՞ս է linker-ը գտնում ֆունկցիայի հասցեն։</h3>
+  <p>Symbol table-ից որոնում է ըստ անվան (<code>symbolAddr[name]</code>) և գրում
+  <code>code[r.instrIndex].rs1</code>-ի մեջ։</p>
+
+  <h3>Հ11. Ինչպե՞ս է realiz-վում <code>if</code>-ը մեքենայի մակարդակում։</h3>
+  <p>Կա <code>CMP</code> հրաման, որը դնում է արդյունք, ապա <code>BR_EQ</code>
+  պայմանական անցում, որը փոխում է <code>pc</code>-ն, եթե պայմանը չի բավարարվում։</p>
+
+  <h3>Հ12. Ինչպե՞ս է աշխատում ֆունկցիայի կանչը VM-ում։</h3>
+  <p><code>CALL</code>-ը պահում է վերադարձի հասցեն և <code>bp</code>-ն
+  <code>callStack</code>-ում, դնում նոր frame և անցնում ֆունկցիային։
+  <code>RET</code>-ը վերականգնում է դրանք և արդյունքը դնում R0-ում։</p>
+
+  <h3>Հ13. Ինչպե՞ս է կանգ առնում կատարումը։</h3>
+  <p><code>HALT</code> հրամանի դեպքում <code>running=false</code>, և <code>run()</code>
+  ցիկլը ավարտվում է։</p>
+
+  <h3>Հ14. Ի՞նչ է անում <code>#ifdef DEBUG_BUILD</code>-ը։</h3>
+  <p>Միայն Debug build-ում ակտիվացնում է հրահանգների trace-ը։ Release-ում այդ
+  կոդը ընդհանրապես չի կոմպիլյացվում, ուստի արագությունը չի տուժում։</p>
+
+  <h3>Հ15. Ինչու՞ է կոդը բաժանված շատ ֆայլերի։</h3>
+  <p>Ամեն ֆայլ ունի մեկ պարտականություն (single responsibility). հեշտ է կարդալ,
+  փորձարկել և փոխել։ Նաև փուլերը կարող են վերաօգտագործվել։</p>
+</section>
+
+</body>
+</html>
